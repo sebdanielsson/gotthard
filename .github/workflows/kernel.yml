@@ -1,26 +1,36 @@
 name: kernel
 
 # Builds the BPI-R4 kernel bundle (kernel, DTBs, kmods) with the OpenWrt build
-# system and Gotthard's kernel options. Slow (1-2 h), so it only runs when the
-# kernel definition changes or on demand.
+# system and Gotthard's kernel options. It takes over an hour, so:
+#
+# - It runs on pushes to main only when a file that goes into the kernel
+#   changes (not on pull requests, not when this workflow or the builder
+#   image digest changes; start it by hand for those).
+# - The bundle is named after a hash of all its inputs. If a bundle for the
+#   same inputs already exists, the job stops after a few seconds unless
+#   `force` is set.
+# - A running build is never cancelled; a newer push waits for it.
 
 on:
   push:
     branches: [main]
     paths:
-      - kernel/**
-      - .github/workflows/kernel.yml
-  pull_request:
-    paths:
-      - kernel/**
-      - .github/workflows/kernel.yml
+      - kernel/openwrt.env
+      - kernel/kmods.list
+      - kernel/config/**
+      - kernel/build-openwrt.sh
   workflow_dispatch:
+    inputs:
+      force:
+        description: Build even if a bundle for the same inputs exists
+        type: boolean
+        default: false
 
 permissions: {}
 
 concurrency:
   group: kernel-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -28,25 +38,54 @@ jobs:
     timeout-minutes: 330
     permissions:
       contents: read
+      actions: read # look up existing bundles
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      - name: Hash the build inputs
+        id: inputs
+        run: |
+          hash=$(sha256sum kernel/openwrt.env kernel/kmods.list kernel/config/* \
+            kernel/build-openwrt.sh kernel/Dockerfile.builder | sha256sum | cut -c1-16)
+          echo "hash=$hash" >>"$GITHUB_OUTPUT"
+          echo "Build inputs hash: $hash"
+
+      - name: Look for an existing bundle
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: kernel-bundle-bpir4-${{ steps.inputs.outputs.hash }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$NAME" \
+            --jq '[.artifacts[] | select(.expired == false)][0].workflow_run.id // empty')
+          if [ -n "$run" ] && [ "$FORCE" != true ]; then
+            echo "::notice::$NAME already exists (run $run); skipping the build. Use force to rebuild."
+            echo "skip=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >>"$GITHUB_OUTPUT"
+          fi
+
       - name: Free disk space
+        if: steps.existing.outputs.skip != 'true'
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
           sudo docker image prune --all --force
           df -h /
 
       - name: Build the builder image
+        if: steps.existing.outputs.skip != 'true'
         run: docker build --tag gotthard-kbuilder --file kernel/Dockerfile.builder kernel
 
       - name: Prepare work directories
+        if: steps.existing.outputs.skip != 'true'
         run: mkdir -p "$RUNNER_TEMP/openwrt/dl" "$RUNNER_TEMP/out"
 
       - name: Restore OpenWrt source downloads
+        if: steps.existing.outputs.skip != 'true'
         id: dl
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -55,6 +94,7 @@ jobs:
           restore-keys: openwrt-dl-
 
       - name: Build kernel bundle
+        if: steps.existing.outputs.skip != 'true'
         run: |
           docker run --rm \
             --volume "$GITHUB_WORKSPACE:/src:ro" \
@@ -65,16 +105,17 @@ jobs:
       # Save downloads even when a later step fails, so a retry doesn't fetch
       # everything again.
       - name: Save OpenWrt source downloads
-        if: always() && steps.dl.outputs.cache-hit != 'true'
+        if: always() && steps.existing.outputs.skip != 'true' && steps.dl.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/openwrt/dl
           key: ${{ steps.dl.outputs.cache-primary-key }}
 
       - name: Upload kernel bundle
+        if: steps.existing.outputs.skip != 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: kernel-bundle-bpir4
+          name: kernel-bundle-bpir4-${{ steps.inputs.outputs.hash }}
           path: ${{ runner.temp }}/out
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
