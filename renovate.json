@@ -1,9 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "github>sebdanielsson/renovate-config",
-    "github>sebdanielsson/renovate-config:automerge-stable"
-  ],
+  "extends": ["github>sebdanielsson/renovate-config"],
   "customManagers": [
     {
       "description": "Container images pinned as image:tag@sha256:digest in workflows and the image builder config",
