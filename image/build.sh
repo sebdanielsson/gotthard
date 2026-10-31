@@ -338,7 +338,8 @@ EOF
 	echo "	};"
 	echo "};"
 } >"$F/gotthard.its"
-(cd "$F" && mkimage -q -f gotthard.its "$OUT/bpir4/gotthard-bpir4.itb")
+# External data, 4 KiB aligned: the same layout as OpenWrt's images.
+(cd "$F" && mkimage -q -E -B 0x1000 -f gotthard.its "$OUT/bpir4/gotthard-bpir4.itb")
 dumpimage -l "$OUT/bpir4/gotthard-bpir4.itb" | grep -E '^ (Image|Configuration)|Data Size' | head -40
 cp "$OUT/bpir4/gotthard-bpir4.itb" "$MEDIA/boot/"
 
