@@ -90,8 +90,8 @@ ssh -L 8080:127.0.0.1:8080 sebastian@192.168.1.1   # then open http://localhost:
 The CI-built kernel adds devtmpfs, a compressed initramfs and a few other options ([kernel.md](kernel.md)). To try it, build with the kernel bundle and run the installer again. It reuses the partitions and keeps `/var`; config in `/etc` comes from the new apkovl, so commit anything you changed with `sudo lbu commit` and copy it out first, or rebuild with it in `site/`.
 
 ```sh
-gh run download <kernel-run-id> -R sebdanielsson/gotthard -p 'kernel-bundle-bpir4-*' -D out/kernel-bundle.tmp
-mv out/kernel-bundle.tmp/kernel-bundle-bpir4-* out/kernel-bundle && rmdir out/kernel-bundle.tmp
+gh run download <kernel-run-id> -R sebdanielsson/gotthard -p 'kernel-bundle-bpir4*' -D out/kernel-bundle.tmp
+mv out/kernel-bundle.tmp/kernel-bundle-bpir4* out/kernel-bundle && rmdir out/kernel-bundle.tmp
 scripts/build-image.sh
 ```
 

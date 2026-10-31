@@ -26,8 +26,8 @@ The image builder reads the configuration embedded in the kernel itself (IKCONFI
 To build an image with a CI kernel locally, download the bundle from a successful kernel workflow run and build as usual:
 
 ```sh
-gh run download <run-id> -R sebdanielsson/gotthard -p 'kernel-bundle-bpir4-*' -D out/kernel-bundle.tmp
-mv out/kernel-bundle.tmp/kernel-bundle-bpir4-* out/kernel-bundle && rmdir out/kernel-bundle.tmp
+gh run download <run-id> -R sebdanielsson/gotthard -p 'kernel-bundle-bpir4*' -D out/kernel-bundle.tmp
+mv out/kernel-bundle.tmp/kernel-bundle-bpir4* out/kernel-bundle && rmdir out/kernel-bundle.tmp
 scripts/build-image.sh
 ```
 
