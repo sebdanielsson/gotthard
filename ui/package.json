@@ -1,6 +1,7 @@
 {
 	"name": "gotthard-ui",
 	"private": true,
+	"license": "MIT",
 	"version": "0.0.1",
 	"type": "module",
 	"packageManager": "npm@12.2.1",

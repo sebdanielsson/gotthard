@@ -38,3 +38,7 @@ Follow [docs/flashing-poc.md](docs/flashing-poc.md). You need a 3.3 V USB serial
 | `scripts/` | Build, test and install helpers |
 | `web/`, `ui/` | Web GUI: Rust backend, SvelteKit frontend |
 | `docs/` | Design notes and runbooks |
+
+## License
+
+Gotthard's own code (scripts, packages, image builder, web GUI) is under the [MIT license](LICENSE). The images it builds also contain third-party software under its own licenses, much of it GPL: the Linux kernel and modules from OpenWrt, BusyBox, and many Alpine packages. Anyone distributing those images must also make their corresponding source available; see [PLAN.md](PLAN.md), phase 8. The shadcn-svelte components in `ui/src/lib/components/ui/` are MIT-licensed by their authors ([LICENSE](ui/src/lib/components/ui/LICENSE)).

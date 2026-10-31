@@ -111,6 +111,7 @@ Packages:
 - [ ] Installer for the eMMC (from the SD card or the NAND OpenWrt)
 - [ ] x86_64 image with Alpine `linux-lts`
 - [ ] Public release: install docs, signed update feed, issue templates
+- [ ] Publish the corresponding source of the GPL components (OpenWrt kernel tree and patches, Alpine package sources) with every released image
 
 ## Risks
 
@@ -128,6 +129,5 @@ Packages:
 ## Open questions for the owner
 
 - Name: keep "Gotthard"?
-- License for the repository and packages.
 - Tailscale: Alpine 3.24 ships 1.98; use upstream's static builds to stay current?
 - When Gotthard moves to the eMMC, does OpenWrt stay on the SD card or NAND as a rescue system?
