@@ -20,6 +20,24 @@
   ],
   "packageRules": [
     {
+      "description": "axum-login 0.18 (latest) requires tower-sessions 0.14. Lift together with axum-login.",
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["tower-sessions"],
+      "allowedVersions": "<0.15"
+    },
+    {
+      "description": "The shadcn-svelte component registry generates code for tailwind-variants v3.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["tailwind-variants"],
+      "allowedVersions": "<4"
+    },
+    {
+      "description": "SvelteKit 3 peers on TypeScript ^6 and typescript-eslint supports <6.1.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<6.1"
+    },
+    {
       "description": "The image builder runs on the Alpine release the OS is built from; changing the Alpine branch is a deliberate decision, not an update.",
       "matchFileNames": ["image/builder.env"],
       "matchDepNames": ["alpine"],
