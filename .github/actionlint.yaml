@@ -1,5 +1,6 @@
-# ubuntu-26.04 is a GA GitHub-hosted runner that actionlint 1.7.12 does not
-# know about yet.
+# ubuntu-26.04 and ubuntu-26.04-arm are GA GitHub-hosted runners that
+# actionlint 1.7.12 does not know about yet.
 self-hosted-runner:
   labels:
     - ubuntu-26.04
+    - ubuntu-26.04-arm

@@ -131,7 +131,7 @@ jobs:
 
   web-build:
     name: Web GUI binary (aarch64 musl)
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 30
     permissions:
       contents: read
@@ -156,7 +156,7 @@ jobs:
   image:
     name: Image and QEMU boot test
     needs: [web-build]
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 60
     permissions:
       contents: read
