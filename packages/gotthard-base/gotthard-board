@@ -37,10 +37,50 @@ install_default() { # <file name in boards/> <target>
 	done
 }
 
+# Give network devices the names their device tree asks for. OpenWrt's DTs
+# name the BPI-R4's SFP+ MACs `sfp-lan`/`sfp-wan` with the property
+# `openwrt,netdev-name`, which OpenWrt applies from userspace (preinit and
+# hotplug), not in the kernel. Without this they would stay ethN.
+# Same order as OpenWrt's /lib/preinit/04_set_netdev_label: `label`, then
+# `openwrt,netdev-name`.
+rename_netdevs() {
+	local prop dev of cur want
+	for prop in label openwrt,netdev-name; do
+		for dev in "${SYSFS:-/sys}"/class/net/*; do
+			of=$(readlink -f "$dev/of_node" 2>/dev/null) || continue
+			[ -f "$of/$prop" ] || continue
+			want=$(tr -d '\0' <"$of/$prop")
+			cur=${dev##*/}
+			[ -n "$want" ] && [ "$cur" != "$want" ] || continue
+			[ -e "${SYSFS:-/sys}/class/net/$want" ] && continue
+			ip link set dev "$cur" down 2>/dev/null
+			ip link set dev "$cur" name "$want" && echo "gotthard-board: renamed $cur to $want"
+		done
+	done
+}
+
+# fw_printenv/fw_setenv config for the BPI-R4: the redundant U-Boot
+# environment in the partition named "ubootenv" (same offsets as OpenWrt).
+uboot_env_config() {
+	local ev dev=""
+	[ -e /etc/fw_env.config ] && return 0
+	for ev in "${SYSFS:-/sys}"/class/block/*/uevent; do
+		if grep -qx 'PARTNAME=ubootenv' "$ev" 2>/dev/null; then
+			dev=$(sed -n 's/^DEVNAME=//p' "$ev")
+			break
+		fi
+	done
+	[ -n "$dev" ] || return 0
+	printf '/dev/%s 0x0 0x40000 0x40000 1\n/dev/%s 0x40000 0x40000 0x40000 1\n' "$dev" "$dev" >/etc/fw_env.config
+	echo "gotthard-board: U-Boot environment on /dev/$dev"
+}
+
 board=$(detect)
 case "${1:-}" in
 apply)
 	echo "$board" >/run/gotthard-board
+	rename_netdevs
+	[ "$board" = bananapi-bpi-r4 ] && uboot_env_config
 	# Kernel builds that ship a module load list in the modloop (the OpenWrt
 	# BPI-R4 kernel loads most drivers from a list, not by modalias).
 	list="/lib/modules/$(uname -r)/gotthard-modules-load.conf"

@@ -8,7 +8,7 @@
 4. **Alpine initramfs:** finds the partition with `apks/.boot_repository` (label GTMEDIA), loads the config overlay `<hostname>.apkovl.tar.gz` from it, mounts a tmpfs root, and installs every package in `/etc/apk/world` from the boot repository and the apk cache on that partition.
 5. **OpenRC:**
    - `modloop` mounts `boot/modloop-bpir4` (kernel modules and firmware)
-   - `gotthard-board` detects the board and installs default network and firewall-zone config if there is none
+   - `gotthard-board` detects the board, renames network devices as the device tree asks (OpenWrt does this in userspace: the SFP+ ports become `sfp-lan` and `sfp-wan`), points `fw_setenv` at the U-Boot environment, and installs default network and firewall-zone config if there is none
    - `gotthard-var` mounts the GTVAR partition on `/var`
    - `gotthard-media` points lbu and the apk cache at the boot media
    - then the firewall, networking, dhcpcd, dnsmasq, sshd, Docker and Tailscale start
