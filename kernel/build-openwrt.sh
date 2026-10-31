@@ -65,13 +65,25 @@ if ! make -j"$JOBS"; then
 fi
 
 log "Collecting kernel bundle"
-rm -rf "$OUT" && mkdir -p "$OUT/kmods"
+# $OUT may be a bind mount: empty it instead of removing it.
+mkdir -p "$OUT"
+find "$OUT" -mindepth 1 -delete
+mkdir -p "$OUT/kmods"
 bin=bin/targets/$OPENWRT_TARGET/$OPENWRT_SUBTARGET
+ls -la "$bin"
 cp "$bin"/*-"$OPENWRT_DEVICE"-squashfs-sysupgrade.itb "$OUT/sysupgrade.itb"
+# Only the kmods and the "kernel" meta package they depend on.
 cp "$bin"/packages/kmod-*.apk "$OUT/kmods/"
-# Index only the kmods and the "kernel" meta package they depend on.
-cp "$bin"/packages/kernel-*.apk "$OUT/kmods/"
-staging_dir/host/bin/apk mkndx --allow-untrusted --output "$OUT/kmods/packages.adb" "$OUT"/kmods/*.apk
+cp "$bin"/packages/kernel*.apk "$OUT/kmods/"
+echo "kmods: $(find "$OUT/kmods" -name '*.apk' | wc -l) packages"
+apk=staging_dir/host/bin/apk
+[ -x "$apk" ] || apk=$(find staging_dir -path '*/bin/apk' -type f | head -1)
+if ! "$apk" mkndx --allow-untrusted --output "$OUT/kmods/packages.adb" "$OUT"/kmods/*.apk; then
+	# OpenWrt's own index of all target packages works too (apk only fetches
+	# what the kmods need, and all of that is in the bundle).
+	echo "apk mkndx failed, using OpenWrt's index"
+	cp "$bin/packages/packages.adb" "$OUT/kmods/packages.adb"
+fi
 cp "$(find build_dir/target-*/linux-"$OPENWRT_TARGET"_"$OPENWRT_SUBTARGET"/linux-*/ -maxdepth 1 -name .config | head -1)" "$OUT/kernel.config"
 (cd "$OUT" && find . -type f ! -name SHA256SUMS -exec sha256sum {} + | sort -k2 >SHA256SUMS)
 

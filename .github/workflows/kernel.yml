@@ -47,7 +47,8 @@ jobs:
         run: mkdir -p "$RUNNER_TEMP/openwrt/dl" "$RUNNER_TEMP/out"
 
       - name: Restore OpenWrt source downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: dl
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/openwrt/dl
           key: openwrt-dl-${{ hashFiles('kernel/openwrt.env', 'kernel/kmods.list', 'kernel/config/**') }}
@@ -60,6 +61,15 @@ jobs:
             --volume "$RUNNER_TEMP/openwrt:/home/builder/openwrt" \
             --volume "$RUNNER_TEMP/out:/home/builder/out" \
             gotthard-kbuilder sh /src/kernel/build-openwrt.sh
+
+      # Save downloads even when a later step fails, so a retry doesn't fetch
+      # everything again.
+      - name: Save OpenWrt source downloads
+        if: always() && steps.dl.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/openwrt/dl
+          key: ${{ steps.dl.outputs.cache-primary-key }}
 
       - name: Upload kernel bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
