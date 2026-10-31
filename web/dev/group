@@ -1,0 +1,4 @@
+root:x:0:root
+wheel:x:10:root,admin
+admin:x:1000:
+operator:x:1001:

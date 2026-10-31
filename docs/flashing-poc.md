@@ -75,6 +75,12 @@ Save evidence for later; `/var` is persistent:
 sudo sh -c 'dmesg > /var/log/first-boot-dmesg.txt; rc-status --all > /var/log/first-boot-rc-status.txt; lsmod > /var/log/first-boot-lsmod.txt'
 ```
 
+The web GUI (`gotthard-web`) listens on localhost only until TLS is done. Open it through an SSH tunnel and log in with the admin user's password:
+
+```sh
+ssh -L 8080:127.0.0.1:8080 sebastian@192.168.1.1   # then open http://localhost:8080
+```
+
 ## 6. Back to OpenWrt
 
 `sudo reboot` and do nothing: the menu's default entry boots OpenWrt after 3 seconds.
@@ -90,6 +96,7 @@ This deletes partitions 8-11 and the U-Boot variables the installer added.
 ## Known limits of the proof of concept
 
 - Uses the official OpenWrt 25.12.6 kernel: no devtmpfs, so `/dev` is managed by BusyBox `mdev`, and the initramfs is uncompressed.
-- No Wi-Fi configuration (the BE14 card isn't installed yet), no web GUI on the image yet, no DNS-over-HTTPS proxy (dnsmasq uses the ISP's DNS servers from DHCP), and Tailscale isn't logged in.
+- No Wi-Fi configuration (the BE14 card isn't installed yet), no DNS-over-HTTPS proxy (dnsmasq uses the ISP's DNS servers from DHCP), and Tailscale isn't logged in.
+- The web GUI is read-only (system, interfaces, firewall ruleset) and only reachable through SSH. TOTP and API keys created in it are saved only after `sudo lbu commit`.
 - Hardware NAT offload is off; forwarding is in software.
 - Booting Gotthard always needs the serial console to pick the menu entry.

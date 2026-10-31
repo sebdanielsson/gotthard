@@ -1,0 +1,6 @@
+rules:
+  adhoc-packages:
+    ignore:
+      # The frontend job installs npm at the exact version pinned in
+      # ui/package.json (packageManager); Node's bundled npm is older.
+      - ci.yml

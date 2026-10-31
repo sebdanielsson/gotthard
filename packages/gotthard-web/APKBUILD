@@ -1,0 +1,29 @@
+# Contributor: Sebastian Danielsson <20663065+sebdanielsson@users.noreply.github.com>
+# Maintainer: Sebastian Danielsson <20663065+sebdanielsson@users.noreply.github.com>
+#
+# Packages the prebuilt static binary from scripts/build-web.sh; image/build.sh
+# copies out/web/gotthard-web-<arch> here as `gotthard-web` before building.
+pkgname=gotthard-web
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="Gotthard router OS: web GUI"
+url="https://github.com/sebdanielsson/gotthard"
+arch="aarch64 x86_64"
+license="custom"
+depends="iproute2 nftables"
+install="$pkgname.post-install"
+options="!check !strip"
+source="
+	gotthard-web
+	gotthard-web.initd
+	gotthard-web.confd
+	"
+builddir="$srcdir"
+
+package() {
+	install -Dm755 "$srcdir"/gotthard-web "$pkgdir"/usr/sbin/gotthard-web
+	install -Dm755 "$srcdir"/gotthard-web.initd "$pkgdir"/etc/init.d/gotthard-web
+	install -Dm644 "$srcdir"/gotthard-web.confd "$pkgdir"/etc/conf.d/gotthard-web
+}
+
+sha512sums=""

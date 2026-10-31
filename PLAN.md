@@ -51,13 +51,13 @@ Packages:
 
 ### 0. Foundations (done)
 
-- [x] Repository, pinned CI (lint, image build plus QEMU boot test, kernel build), Dependabot
+- [x] Repository, pinned CI (one `ci` gate: lint, web, image build plus QEMU boot test; separate kernel build), Renovate
 - [x] Image builder: FIT image, modloop from OpenWrt modules plus extra kmods, Alpine boot repository, apkovl from site config
 - [x] `gotthard-base` package with boot services and defaults
 - [x] QEMU self-test: two boots, checks services, `apk add`, `lbu commit` and `/var` persistence
 - [x] SD dual-boot installer, tested against a replica of the router's card
 - [x] Runbooks: serial console, flashing, site config
-- [ ] Web GUI skeleton (in progress)
+- [x] Web GUI skeleton: login (system accounts, TOTP), API keys, dashboard, firewall viewer; packaged as `gotthard-web`, listens on localhost
 
 ### 1. First boot on hardware (waiting for the serial adapter)
 

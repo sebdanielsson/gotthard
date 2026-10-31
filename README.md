@@ -16,6 +16,7 @@ Status: proof of concept. It builds, boots and passes its self-test in QEMU, and
 Needs Docker on an arm64 machine (Apple silicon Mac or an arm64 Linux host).
 
 ```sh
+scripts/build-web.sh            # out/web/gotthard-web-aarch64 (optional; the image includes it if present)
 scripts/build-image.sh --qemu   # out/bpir4 (device image) and out/qemu (test assets)
 scripts/test-qemu.sh            # boot twice in QEMU and run the self-test
 scripts/test-install-sd.sh      # test the SD installer against a replica card

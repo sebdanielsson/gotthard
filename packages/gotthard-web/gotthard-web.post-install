@@ -1,0 +1,3 @@
+#!/bin/sh
+rc-update -q add gotthard-web default 2>/dev/null
+exit 0

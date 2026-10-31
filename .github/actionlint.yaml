@@ -1,0 +1,5 @@
+# ubuntu-26.04 is a GA GitHub-hosted runner that actionlint 1.7.12 does not
+# know about yet.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

@@ -1,0 +1,64 @@
+[package]
+name = "gotthard-web"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99.1"
+description = "Web UI and JSON API for the Gotthard router OS"
+publish = false
+
+[dependencies]
+argon2 = "0.6.0"
+axum = "0.8.9"
+# axum-login 0.18.0 is the latest release and requires tower-sessions 0.14.x.
+axum-login = "0.18.0"
+base64 = "0.23.1"
+bcrypt = "0.19.3"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+getrandom = "0.4.3"
+qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
+rust-embed = { version = "8.13.0", features = ["mime-guess"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha-crypt = "0.6.0"
+sha2 = "0.11.1"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net", "signal", "process", "fs", "time", "sync"] }
+totp-rs = { version = "6.0.0", default-features = false, features = ["std", "otpauth", "zeroize"] }
+tower-http = { version = "0.7.1", features = ["trace", "set-header", "limit"] }
+tower-sessions = "0.14.0"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+yescrypt = "0.1.0"
+
+[dev-dependencies]
+http-body-util = "0.1.5"
+tempfile = "3.27.0"
+tower = { version = "0.5.3", features = ["util"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+dbg_macro = "warn"
+todo = "warn"
+
+[profile.dev]
+# Keep the target dir small; full debuginfo is rarely needed for this crate.
+debug = "line-tables-only"
+
+# Dependencies (notably the password-hashing crates) are unbearably slow
+# without optimisation, which makes the test suite crawl. They are compiled
+# once and cached, so optimise them even in dev/test builds.
+[profile.dev.package."*"]
+debug = false
+opt-level = 2
+
+[profile.release]
+# The router runs diskless (everything in RAM), so favour size.
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+strip = "symbols"

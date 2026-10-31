@@ -1,0 +1,11 @@
+# Gotthard web GUI settings.
+#
+# Listens on localhost only until TLS is implemented. Reach it through SSH:
+#   ssh -L 8080:127.0.0.1:8080 <admin>@192.168.1.1   then open http://localhost:8080
+#GOTTHARD_WEB_LISTEN="127.0.0.1:8080"
+
+# TOTP secrets and API keys. Under /etc so `lbu commit` saves them.
+#GOTTHARD_WEB_STATE_DIR="/etc/gotthard/auth"
+
+# Extra options, e.g. --insecure-cookies for plain HTTP on a LAN address.
+#GOTTHARD_WEB_OPTS=""

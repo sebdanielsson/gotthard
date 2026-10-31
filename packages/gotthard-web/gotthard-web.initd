@@ -1,0 +1,24 @@
+#!/sbin/openrc-run
+# Gotthard web GUI. Settings in /etc/conf.d/gotthard-web.
+
+description="Gotthard web GUI"
+
+: "${GOTTHARD_WEB_LISTEN:=127.0.0.1:8080}"
+: "${GOTTHARD_WEB_STATE_DIR:=/etc/gotthard/auth}"
+
+command=/usr/sbin/gotthard-web
+command_args="--listen $GOTTHARD_WEB_LISTEN --state-dir $GOTTHARD_WEB_STATE_DIR ${GOTTHARD_WEB_OPTS:-}"
+supervisor=supervise-daemon
+respawn_delay=2
+respawn_max=10
+output_log=/var/log/gotthard-web.log
+error_log=/var/log/gotthard-web.log
+
+depend() {
+	need net
+	after firewall gotthard-var
+}
+
+start_pre() {
+	checkpath -d -m 0700 "$GOTTHARD_WEB_STATE_DIR"
+}

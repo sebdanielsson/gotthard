@@ -45,6 +45,11 @@ start() {
 		check docker docker info
 		check var-persistent mountpoint -q /var
 		check bootlog sh -c 'ls -d /var/log/gotthard/boot-* >/dev/null'
+		if [ -x /usr/sbin/gotthard-web ]; then
+			# Unauthenticated API call must be refused with 401, the UI served with 200.
+			check web-api sh -c 'test "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/auth/me)" = 401'
+			check web-ui sh -c 'test "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/)" = 200'
+		fi
 		check admin-in-wheel sh -c 'getent group wheel | cut -d: -f4 | tr , "\n" | grep -vx root | grep -q .'
 
 		case "${phase:-1}" in

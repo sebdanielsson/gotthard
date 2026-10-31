@@ -1,0 +1,30 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>sebdanielsson/renovate-config",
+    "github>sebdanielsson/renovate-config:automerge-stable"
+  ],
+  "customManagers": [
+    {
+      "description": "Container images pinned as image:tag@sha256:digest in workflows and the image builder config",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/",
+        "/^image/builder\\.env$/"
+      ],
+      "matchStrings": [
+        "(?<depName>[a-z0-9][a-z0-9._/-]*[a-z0-9]):(?<currentValue>[A-Za-z0-9][A-Za-z0-9._-]*)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "The image builder runs on the Alpine release the OS is built from; changing the Alpine branch is a deliberate decision, not an update.",
+      "matchFileNames": ["image/builder.env"],
+      "matchDepNames": ["alpine"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    }
+  ]
+}

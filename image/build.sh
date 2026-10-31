@@ -80,12 +80,26 @@ fi
 # ---------------------------------------------------------------------------
 log "Building Gotthard packages"
 mkdir -p "$WORK/aports/gotthard"
-cp -r "$SRC/packages/gotthard-base" "$WORK/aports/gotthard/"
-(
-	cd "$WORK/aports/gotthard/gotthard-base"
-	abuild -F checksum
-	REPODEST=$WORK/repo abuild -F -d -q
-)
+build_pkg() { # <name>
+	cp -r "$SRC/packages/$1" "$WORK/aports/gotthard/"
+	[ -n "${2:-}" ] && cp "$2" "$WORK/aports/gotthard/$1/$1"
+	(
+		cd "$WORK/aports/gotthard/$1"
+		abuild -F checksum
+		REPODEST=$WORK/repo abuild -F -d -q
+	)
+}
+build_pkg gotthard-base
+# The web GUI is a prebuilt static binary from scripts/build-web.sh; without
+# it the image is built without the GUI.
+WEB_BIN=$OUT/web/gotthard-web-aarch64
+if [ -f "$WEB_BIN" ]; then
+	build_pkg gotthard-web "$WEB_BIN"
+	EXTRA_PKGS=gotthard-web
+else
+	echo "no $WEB_BIN; building without the web GUI (run scripts/build-web.sh)"
+	EXTRA_PKGS=
+fi
 ls "$WORK/repo/gotthard/aarch64/"
 
 # ---------------------------------------------------------------------------
@@ -173,7 +187,7 @@ ls -la "$MEDIA/boot/modloop-bpir4"
 # ---------------------------------------------------------------------------
 log "Boot repository ($ALPINE_BRANCH)"
 REPO_ARGS="--repository $ALPINE_MIRROR/$ALPINE_BRANCH/main --repository $ALPINE_MIRROR/$ALPINE_BRANCH/community --repository $WORK/repo/gotthard"
-PKGS=$(grep -vE '^\s*(#|$)' "$SRC/image/world" | tr '\n' ' ')
+PKGS="$(grep -vE '^\s*(#|$)' "$SRC/image/world" | tr '\n' ' ') $EXTRA_PKGS"
 FR=$WORK/fetchroot
 mkdir -p "$FR/etc/apk" "$CACHE/apk"
 cp -a /etc/apk/keys "$FR/etc/apk/"
@@ -240,7 +254,7 @@ rc_add() { # <runlevel> <service...>
 rc_add sysinit devfs dmesg mdev hwdrivers modloop
 rc_add boot modules sysctl hostname bootmisc syslog seedrng hwclock \
 	gotthard-board gotthard-var gotthard-media nftables networking
-rc_add default chronyd dhcpcd dnsmasq sshd docker tailscale crond local gotthard-bootlog gotthard-selftest
+rc_add default chronyd dhcpcd dnsmasq sshd docker tailscale crond local gotthard-bootlog gotthard-selftest $EXTRA_PKGS
 rc_add shutdown mount-ro killprocs savecache
 
 # The apkovl holds what lbu would save: files changed or added compared to
