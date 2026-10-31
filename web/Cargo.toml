@@ -25,7 +25,7 @@ thiserror = "2.0.21"
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net", "signal", "process", "fs", "time", "sync"] }
 totp-rs = { version = "6.0.0", default-features = false, features = ["std", "otpauth", "zeroize"] }
 tower-http = { version = "0.7.1", features = ["trace", "set-header", "limit"] }
-tower-sessions = "0.14.0"
+tower-sessions = "0.15.0"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 yescrypt = "0.1.0"
