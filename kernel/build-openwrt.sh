@@ -5,7 +5,7 @@
 #   sysupgrade.itb   OpenWrt FIT image (kernel, DTB, overlays, OpenWrt rootfs)
 #   kmods/           all kmod-*.apk built, plus an unsigned packages.adb
 #                    (integrity comes from SHA256SUMS of the CI artifact)
-#   kernel.config    the final kernel .config
+#   kernel.config    config embedded in the main kernel (IKCONFIG)
 #   SHA256SUMS
 #
 # image/build.sh consumes the bundle the same way it consumes an official
@@ -75,6 +75,8 @@ cp "$bin"/*-"$OPENWRT_DEVICE"-squashfs-sysupgrade.itb "$OUT/sysupgrade.itb"
 # Only the kmods and the "kernel" meta package they depend on.
 cp "$bin"/packages/kmod-*.apk "$OUT/kmods/"
 cp "$bin"/packages/kernel*.apk "$OUT/kmods/"
+# The kernel package depends on libc; ship it so the bundle is self-contained.
+cp "$bin"/packages/libc-*.apk "$bin"/packages/libgcc*.apk "$OUT/kmods/" 2>/dev/null || true
 echo "kmods: $(find "$OUT/kmods" -name '*.apk' | wc -l) packages"
 apk=staging_dir/host/bin/apk
 [ -x "$apk" ] || apk=$(find staging_dir -path '*/bin/apk' -type f | head -1)
@@ -84,9 +86,22 @@ if ! "$apk" mkndx --allow-untrusted --output "$OUT/kmods/packages.adb" "$OUT"/km
 	echo "apk mkndx failed, using OpenWrt's index"
 	cp "$bin/packages/packages.adb" "$OUT/kmods/packages.adb"
 fi
-cp "$(find build_dir/target-*/linux-"$OPENWRT_TARGET"_"$OPENWRT_SUBTARGET"/linux-*/ -maxdepth 1 -name .config | head -1)" "$OUT/kernel.config"
+# The config embedded in the main kernel (KDIR/vmlinux, the one in
+# sysupgrade.itb). The .config left in the kernel tree belongs to the
+# recovery-initramfs kernel, which OpenWrt builds last with other
+# initramfs options.
+kdir=$(find build_dir -maxdepth 2 -type d -name "linux-${OPENWRT_TARGET}_${OPENWRT_SUBTARGET}" | head -1)
+off=$(grep -abo IKCFG_ST "$kdir/vmlinux" | head -1 | cut -d: -f1)
+if [ -n "$off" ]; then
+	tail -c +$((off + 9)) "$kdir/vmlinux" | gzip -dc >"$OUT/kernel.config" 2>/dev/null || true
+fi
+if [ ! -s "$OUT/kernel.config" ]; then
+	# Informational only: image/build.sh reads the config from the kernel itself.
+	echo "warning: no config embedded in $kdir/vmlinux, saving the tree's .config instead" >&2
+	cp "$(find build_dir/target-*/linux-"$OPENWRT_TARGET"_"$OPENWRT_SUBTARGET"/linux-*/ -maxdepth 1 -name .config | head -1)" "$OUT/kernel.config"
+fi
 (cd "$OUT" && find . -type f ! -name SHA256SUMS -exec sha256sum {} + | sort -k2 >SHA256SUMS)
 
 log "Done"
-grep -E '^CONFIG_(DEVTMPFS|RD_ZSTD|SQUASHFS_ZSTD|AUTOFS_FS|PSI|IKCONFIG_PROC)=' "$OUT/kernel.config"
+grep -E '^CONFIG_(DEVTMPFS|RD_GZIP|RD_ZSTD|SQUASHFS_ZSTD|AUTOFS_FS|PSI|IKCONFIG_PROC)=' "$OUT/kernel.config" || true
 ls -la "$OUT"

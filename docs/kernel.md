@@ -21,6 +21,17 @@ The official kernel works for the proof of concept: Alpine's initramfs copes wit
 | `AUTOFS_FS`, `PSI` | Automounts, pressure stall information |
 | `IKCONFIG_PROC`, `KALLSYMS` | Debugging |
 
+The image builder reads the configuration embedded in the kernel itself (IKCONFIG) to choose the initramfs compression: zstd for the CI kernel (a 4 MB initramfs instead of 10 MB), none for the official one.
+
+To build an image with a CI kernel locally, download the bundle from a successful kernel workflow run and build as usual:
+
+```sh
+gh run download <run-id> -R sebdanielsson/gotthard -n kernel-bundle-bpir4 -D out/kernel-bundle
+scripts/build-image.sh
+```
+
+Remove `out/kernel-bundle` to go back to the official kernel. The CI bundle's kmods feed is unsigned; its integrity comes from the artifact's `SHA256SUMS`, which the builder checks.
+
 ## Modules
 
 The OpenWrt root filesystem in the FIT image provides the device's default modules and firmware. [`kernel/kmods.list`](../kernel/kmods.list) adds modules for Docker (veth, bridge netfilter, nftables), WireGuard, Tailscale (tun), traffic shaping and USB storage. The builder merges both, runs `depmod`, and packs them with the firmware into `boot/modloop-bpir4` on the boot media.

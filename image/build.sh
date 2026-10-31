@@ -53,8 +53,8 @@ fi
 
 log "Installing build tools"
 apk add --no-cache --quiet \
-	abuild alpine-conf cpio curl dtc e2fsprogs kmod mkinitfs openssl qemu-img \
-	squashfs-tools tar u-boot-tools xz
+	abuild alpine-conf cpio curl dtc e2fsprogs grep kmod mkinitfs openssl qemu-img \
+	squashfs-tools tar u-boot-tools xz zstd
 
 rm -rf "$WORK" "$OUT/bpir4" "$OUT/qemu"
 mkdir -p "$WORK" "$OUT/bpir4" "$CACHE"
@@ -112,11 +112,6 @@ if [ -f "$BUNDLE/sysupgrade.itb" ]; then
 	cp "$BUNDLE/sysupgrade.itb" "$K/sysupgrade.itb"
 	KMODS_REPO=$BUNDLE/kmods/packages.adb
 	KMODS_TRUST=--allow-untrusted
-	if grep -q '^CONFIG_RD_ZSTD=y' "$BUNDLE/kernel.config"; then
-		INITRAMFS_COMP=zstd
-	else
-		INITRAMFS_COMP=none
-	fi
 	KERNEL_SOURCE="Gotthard CI build of OpenWrt $OPENWRT_VERSION"
 else
 	echo "using official OpenWrt $OPENWRT_VERSION kernel"
@@ -129,7 +124,6 @@ else
 	cp "$itb" "$K/sysupgrade.itb"
 	KMODS_REPO=$OPENWRT_DOWNLOAD/$OPENWRT_KMODS_DIR/packages.adb
 	KMODS_TRUST=
-	INITRAMFS_COMP=none # the release kernel only accepts uncompressed initramfs
 	KERNEL_SOURCE="OpenWrt $OPENWRT_VERSION release"
 fi
 
@@ -144,6 +138,27 @@ echo "kernel $KVER ($KERNEL_SOURCE)"
 OVERLAYS=$(sed -n 's/^ Image [0-9]* (fdt-\(mt7988a-.*\))$/\1/p' "$K/fit.txt")
 echo "DT overlays: $(echo "$OVERLAYS" | tr '\n' ' ')"
 
+# The kernel's own config, if built in (IKCONFIG): it decides how the
+# initramfs may be compressed. The official release kernel has none and
+# accepts only an uncompressed initramfs.
+gzip -dc "$K/kernel-1.bin" >"$K/Image"
+off=$(grep -abo IKCFG_ST "$K/Image" | head -1 | cut -d: -f1)
+if [ -n "$off" ]; then
+	tail -c +$((off + 9)) "$K/Image" | gzip -dc >"$K/kernel.config" 2>/dev/null || true
+fi
+rm -f "$K/Image"
+if grep -q '^CONFIG_RD_ZSTD=y' "$K/kernel.config" 2>/dev/null; then
+	INITRAMFS_COMP=zstd
+elif grep -q '^CONFIG_RD_GZIP=y' "$K/kernel.config" 2>/dev/null; then
+	INITRAMFS_COMP=gzip
+else
+	INITRAMFS_COMP=none
+fi
+echo "initramfs compression: $INITRAMFS_COMP"
+for opt in DEVTMPFS PSI AUTOFS_FS SQUASHFS_ZSTD; do
+	grep -q "^CONFIG_$opt=y" "$K/kernel.config" 2>/dev/null && echo "kernel has $opt"
+done
+
 # Modules and firmware from the OpenWrt root filesystem...
 unsquashfs -q -no-xattrs -d "$K/owrt" "$K/rootfs-1.bin" \
 	lib/modules lib/firmware etc/modules.d etc/modules-boot.d >/dev/null
@@ -154,7 +169,8 @@ KR=$WORK/kroot
 mkdir -p "$KR/etc/apk/keys"
 cp "$SRC"/kernel/keys/*.pem "$KR/etc/apk/keys/"
 echo "$KMODS_REPO" >"$KR/etc/apk/repositories"
-[ -n "$KMODS_TRUST" ] || echo "$OPENWRT_DOWNLOAD/packages/packages.adb" >>"$KR/etc/apk/repositories"
+# The "kernel" package needs OpenWrt's libc package, from the release feed.
+echo "$OPENWRT_DOWNLOAD/packages/packages.adb" >>"$KR/etc/apk/repositories"
 # shellcheck disable=SC2046
 apk --root "$KR" --arch "$OPENWRT_PKGARCH" --initdb $KMODS_TRUST --no-cache --quiet \
 	add --no-scripts $(grep -vE '^\s*(#|$)' "$SRC/kernel/kmods.list")
