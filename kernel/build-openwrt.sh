@@ -52,7 +52,7 @@ for want in CONFIG_TARGET_mediatek_filogic_DEVICE_bananapi_bpi-r4=y CONFIG_KERNE
 	grep -qx "$want" .config || { echo "defconfig dropped $want" >&2; exit 1; }
 done
 grep -vE '^\s*(#|$)' "$SRC/kernel/kmods.list" | while read -r p; do
-	grep -qx "CONFIG_PACKAGE_$p=m" .config || { echo "defconfig dropped $p" >&2; exit 1; }
+	grep -qE "^CONFIG_PACKAGE_$p=(y|m)$" .config || { echo "defconfig dropped $p" >&2; exit 1; }
 done
 
 log "Downloading sources"

@@ -240,7 +240,7 @@ rc_add() { # <runlevel> <service...>
 rc_add sysinit devfs dmesg mdev hwdrivers modloop
 rc_add boot modules sysctl hostname bootmisc syslog seedrng hwclock \
 	gotthard-board gotthard-var gotthard-media nftables networking
-rc_add default chronyd dhcpcd dnsmasq sshd docker tailscale crond local gotthard-selftest
+rc_add default chronyd dhcpcd dnsmasq sshd docker tailscale crond local gotthard-bootlog gotthard-selftest
 rc_add shutdown mount-ro killprocs savecache
 
 # The apkovl holds what lbu would save: files changed or added compared to

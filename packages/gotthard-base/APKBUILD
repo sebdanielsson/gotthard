@@ -23,6 +23,7 @@ source="
 	gotthard-media.initd
 	gotthard-var.initd
 	gotthard-selftest.initd
+	gotthard-bootlog.initd
 	gotthard-persist.commit-hook
 	gotthard-board
 	gotthard-getty
@@ -49,6 +50,7 @@ package() {
 	install -Dm755 "$srcdir"/gotthard-media.initd "$pkgdir"/etc/init.d/gotthard-media
 	install -Dm755 "$srcdir"/gotthard-var.initd "$pkgdir"/etc/init.d/gotthard-var
 	install -Dm755 "$srcdir"/gotthard-selftest.initd "$pkgdir"/etc/init.d/gotthard-selftest
+	install -Dm755 "$srcdir"/gotthard-bootlog.initd "$pkgdir"/etc/init.d/gotthard-bootlog
 	install -Dm755 "$srcdir"/gotthard-persist.commit-hook \
 		"$pkgdir"/etc/apk/commit_hooks.d/gotthard-persist.hook
 	install -Dm755 "$srcdir"/gotthard-board "$pkgdir"/usr/sbin/gotthard-board

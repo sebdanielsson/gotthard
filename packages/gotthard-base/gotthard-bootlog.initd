@@ -1,0 +1,40 @@
+#!/sbin/openrc-run
+# Save a snapshot of each boot to /var/log/gotthard/boot-<time>/ (on the
+# persistent /var), so a boot without working network can still be analysed
+# afterwards. Keeps the last 10 boots.
+
+description="Save boot diagnostics to /var/log/gotthard"
+
+depend() {
+	after *
+	before gotthard-selftest
+}
+
+start() {
+	local dir keep=10
+	dir=/var/log/gotthard/boot-$(date -u +%Y%m%dT%H%M%SZ)
+	ebegin "Saving boot diagnostics to $dir"
+	mkdir -p "$dir"
+	(
+		cd "$dir" || exit 1
+		cat /proc/cmdline >cmdline
+		uname -a >uname.txt
+		cat /run/gotthard-board >board 2>/dev/null
+		dmesg >dmesg 2>&1
+		rc-status --all >rc-status 2>&1
+		lsmod >lsmod 2>&1
+		ip -d link >ip-link 2>&1
+		ip addr >ip-addr 2>&1
+		ip route >ip-route 2>&1
+		ip -6 route >ip6-route 2>&1
+		nft list ruleset >nft-ruleset 2>&1
+		free -m >free 2>&1
+		mount >mount 2>&1
+		cat /var/log/messages >messages 2>/dev/null
+	)
+	# shellcheck disable=SC2012 # names are ours, no odd characters
+	ls -1d /var/log/gotthard/boot-* 2>/dev/null | sort -r | tail -n +$((keep + 1)) | while read -r old; do
+		rm -rf "$old"
+	done
+	eend 0
+}

@@ -187,7 +187,7 @@ log "== U-Boot boot menu entry (OpenWrt stays the default)"
 {
 	run $FW_SETENV gt_part gotthard_a
 	run $FW_SETENV gt_bootargs 'console=ttyS0,115200n1 pci=pcie_bus_perf'
-	run $FW_SETENV boot_gotthard 'led $bootled_pwr on ; part start mmc 0 $gt_part part_addr && part size mmc 0 $gt_part part_size && run mmc_read_vol && setenv bootargs $gt_bootargs && bootm $loadaddr#$bootconf#$bootconf_sd ; led $bootled_pwr off'
+	run $FW_SETENV boot_gotthard 'led $bootled_pwr on ; part start mmc 0 $gt_part part_addr && part size mmc 0 $gt_part part_size && run mmc_read_vol && setenv bootargs $gt_bootargs && bootm $loadaddr#$bootconf#$bootconf_sd#$bootconf_extra ; led $bootled_pwr off'
 	run $FW_SETENV bootmenu_9 'Boot Gotthard (Alpine) from SD card.=run boot_gotthard ; run bootmenu_confirm_return'
 }
 

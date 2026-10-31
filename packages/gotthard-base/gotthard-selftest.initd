@@ -44,6 +44,7 @@ start() {
 		check dnsmasq rc-service dnsmasq status
 		check docker docker info
 		check var-persistent mountpoint -q /var
+		check bootlog sh -c 'ls -d /var/log/gotthard/boot-* >/dev/null'
 		check admin-in-wheel sh -c 'getent group wheel | cut -d: -f4 | tr , "\n" | grep -vx root | grep -q .'
 
 		case "${phase:-1}" in
