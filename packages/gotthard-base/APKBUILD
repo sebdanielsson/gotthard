@@ -1,0 +1,77 @@
+# Contributor: Sebastian Danielsson <20663065+sebdanielsson@users.noreply.github.com>
+# Maintainer: Sebastian Danielsson <20663065+sebdanielsson@users.noreply.github.com>
+pkgname=gotthard-base
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="Gotthard router OS: base configuration and boot services"
+url="https://github.com/sebdanielsson/gotthard"
+arch="noarch"
+license="custom"
+depends="
+	alpine-base
+	bash
+	dhcpcd
+	dnsmasq
+	ifupdown-ng
+	nftables
+	sudo
+	"
+install="$pkgname.post-install $pkgname.post-upgrade"
+options="!check"
+source="
+	gotthard-board.initd
+	gotthard-media.initd
+	gotthard-var.initd
+	gotthard-selftest.initd
+	gotthard-persist.commit-hook
+	gotthard-board
+	gotthard-getty
+	sysctl.conf
+	sudoers
+	sshd.conf
+	dnsmasq.conf
+	daemon.json
+	nftables-10-gotthard.nft
+	profile.sh
+	protected-paths.list
+	boards/bananapi-bpi-r4.interfaces
+	boards/bananapi-bpi-r4.zones.nft
+	boards/qemu-virt.interfaces
+	boards/qemu-virt.zones.nft
+	boards/qemu-virt.resolv.conf
+	"
+builddir="$srcdir"
+
+package() {
+	local share="$pkgdir"/usr/share/gotthard
+
+	install -Dm755 "$srcdir"/gotthard-board.initd "$pkgdir"/etc/init.d/gotthard-board
+	install -Dm755 "$srcdir"/gotthard-media.initd "$pkgdir"/etc/init.d/gotthard-media
+	install -Dm755 "$srcdir"/gotthard-var.initd "$pkgdir"/etc/init.d/gotthard-var
+	install -Dm755 "$srcdir"/gotthard-selftest.initd "$pkgdir"/etc/init.d/gotthard-selftest
+	install -Dm755 "$srcdir"/gotthard-persist.commit-hook \
+		"$pkgdir"/etc/apk/commit_hooks.d/gotthard-persist.hook
+	install -Dm755 "$srcdir"/gotthard-board "$pkgdir"/usr/sbin/gotthard-board
+	install -Dm755 "$srcdir"/gotthard-getty "$pkgdir"/usr/sbin/gotthard-getty
+
+	install -Dm644 "$srcdir"/sysctl.conf "$pkgdir"/etc/sysctl.d/10-gotthard.conf
+	install -Dm440 "$srcdir"/sudoers "$pkgdir"/etc/sudoers.d/10-gotthard-wheel
+	install -Dm644 "$srcdir"/sshd.conf "$pkgdir"/etc/ssh/sshd_config.d/10-gotthard.conf
+	install -Dm644 "$srcdir"/dnsmasq.conf "$pkgdir"/etc/dnsmasq.d/10-gotthard.conf
+	install -Dm644 "$srcdir"/daemon.json "$pkgdir"/etc/docker/daemon.json
+	install -Dm644 "$srcdir"/nftables-10-gotthard.nft "$pkgdir"/etc/nftables.d/10-gotthard.nft
+	install -Dm644 "$srcdir"/profile.sh "$pkgdir"/etc/profile.d/gotthard.sh
+	install -Dm644 "$srcdir"/protected-paths.list \
+		"$pkgdir"/etc/apk/protected_paths.d/gotthard.list
+
+	local f
+	for f in bananapi-bpi-r4.interfaces bananapi-bpi-r4.zones.nft \
+		qemu-virt.interfaces qemu-virt.zones.nft qemu-virt.resolv.conf; do
+		install -Dm644 "$srcdir"/$f "$share"/boards/$f
+	done
+
+	mkdir -p "$pkgdir"/etc/gotthard
+	echo "GOTTHARD_VERSION=$pkgver-r$pkgrel" >"$pkgdir"/etc/gotthard-release
+}
+
+sha512sums=""

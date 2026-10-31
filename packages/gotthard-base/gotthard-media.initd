@@ -1,0 +1,57 @@
+#!/sbin/openrc-run
+# Wire up the boot media (the partition with apks/, the modloop and the
+# apkovl): lbu saves config there, and apk caches packages there so packages
+# added with `apk add` are reinstalled at every boot.
+
+description="Configure lbu and the apk cache for the boot media"
+
+depend() {
+	after modloop localmount gotthard-var
+}
+
+find_media() {
+	local d
+	for d in /media/*; do
+		if [ -f "$d/apks/.boot_repository" ]; then
+			echo "$d"
+			return 0
+		fi
+	done
+	return 1
+}
+
+start() {
+	local media name branch repo
+	media=$(find_media) || {
+		ewarn "Boot media not found; lbu and the apk cache are not configured"
+		return 0
+	}
+	name=${media#/media/}
+	ebegin "Using boot media $media"
+
+	# lbu: where `lbu commit` writes the apkovl
+	mkdir -p /etc/lbu
+	touch /etc/lbu/lbu.conf
+	if ! grep -qx "LBU_MEDIA=$name" /etc/lbu/lbu.conf; then
+		sed -i '/^LBU_MEDIA=/d' /etc/lbu/lbu.conf
+		echo "LBU_MEDIA=$name" >>/etc/lbu/lbu.conf
+	fi
+
+	# apk cache on the boot media
+	if [ ! -e "$media/cache" ]; then
+		mount -o remount,rw "$media" && mkdir -p "$media/cache"
+		mount -o remount,ro "$media"
+	fi
+	if [ "$(readlink /etc/apk/cache 2>/dev/null)" != "$media/cache" ]; then
+		rm -rf /etc/apk/cache
+		ln -s "$media/cache" /etc/apk/cache
+	fi
+
+	# Online repositories for `apk add`, after the boot repository
+	branch=v$(cut -d. -f1,2 /etc/alpine-release)
+	for repo in main community; do
+		repo="https://dl-cdn.alpinelinux.org/alpine/$branch/$repo"
+		grep -qx "$repo" /etc/apk/repositories 2>/dev/null || echo "$repo" >>/etc/apk/repositories
+	done
+	eend 0
+}

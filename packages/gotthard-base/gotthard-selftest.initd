@@ -1,0 +1,69 @@
+#!/sbin/openrc-run
+# Boot self-test for CI and QEMU. Only runs when the kernel command line
+# contains `gotthard.selftest`; prints results to the console and powers off.
+#
+#   gotthard.selftest=1  first boot: base checks, then make changes that must
+#                        survive a reboot (apk add, lbu commit, a file in /var)
+#   gotthard.selftest=2  second boot on the same disks: base checks, and check
+#                        that those changes survived
+
+description="Boot self-test (only with gotthard.selftest on the kernel command line)"
+
+depend() {
+	after *
+}
+
+check() { # <name> <command...>
+	local name=$1
+	shift
+	if "$@" >/tmp/selftest.out 2>&1; then
+		echo "GOTTHARD-SELFTEST: PASS $name"
+	else
+		echo "GOTTHARD-SELFTEST: FAIL $name"
+		tail -n 5 /tmp/selftest.out | sed 's/^/GOTTHARD-SELFTEST:   | /'
+		failures=$((failures + 1))
+	fi
+}
+
+start() {
+	grep -qw gotthard.selftest /proc/cmdline || return 0
+	local phase
+	phase=$(sed -n 's/.*gotthard\.selftest=\([0-9]\).*/\1/p' /proc/cmdline)
+	failures=0
+	{
+		echo "GOTTHARD-SELFTEST: BEGIN phase=${phase:-1} $(uname -r) board=$(cat /run/gotthard-board 2>/dev/null)"
+		check modloop test -d "/lib/modules/$(uname -r)"
+		check boot-media test -L /etc/apk/cache
+		check lbu-media grep -q '^LBU_MEDIA=' /etc/lbu/lbu.conf
+		check uutils sh -c 'readlink -f "$(command -v ls)" | grep -q uutils'
+		check bash command -v bash
+		check sudo command -v sudo
+		check sysctl rc-service sysctl status
+		check nftables-loaded nft list table inet gotthard
+		check sshd rc-service sshd status
+		check dnsmasq rc-service dnsmasq status
+		check docker docker info
+		check var-persistent mountpoint -q /var
+		check admin-in-wheel sh -c 'getent group wheel | cut -d: -f4 | tr , "\n" | grep -vx root | grep -q .'
+
+		case "${phase:-1}" in
+		1)
+			echo "GOTTHARD-SELFTEST: date $(date -u +%FT%TZ)"
+			check https-fetch curl -fsS -o /dev/null https://dl-cdn.alpinelinux.org/alpine/
+			check apk-add-persists apk add -q jq
+			check lbu-commit sh -c 'echo selftest >/etc/gotthard/selftest-marker && lbu commit -q'
+			check var-write sh -c 'echo selftest >/var/lib/gotthard-selftest'
+			;;
+		2)
+			check apk-add-survived command -v jq
+			check lbu-survived grep -qx selftest /etc/gotthard/selftest-marker
+			check var-survived grep -qx selftest /var/lib/gotthard-selftest
+			;;
+		esac
+
+		echo "GOTTHARD-SELFTEST: memory $(free -m | awk '/Mem:/ {print $3 "MiB used of " $2 "MiB"}')"
+		echo "GOTTHARD-SELFTEST: rootfs $(df -P -k / | awk 'NR==2 {print int($3/1024) "MiB used"}')"
+		echo "GOTTHARD-SELFTEST: END failures=$failures"
+	} >/dev/console 2>&1
+	poweroff
+}

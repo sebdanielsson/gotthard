@@ -1,0 +1,55 @@
+#!/sbin/openrc-run
+# Diskless "data disk" mode: the OS runs from RAM, /var lives on a partition
+# labelled GTVAR (Docker data, leases, logs, Tailscale state).
+#
+# Packages are installed into the RAM /var at every boot. Before mounting the
+# partition over it, copy anything missing on the partition (new directories
+# and files from packages) without overwriting existing state.
+
+description="Mount the persistent /var partition"
+
+: "${GTVAR_LABEL:=GTVAR}"
+
+depend() {
+	after modloop
+	before localmount netmount syslog docker dnsmasq sshd chronyd tailscale
+}
+
+# Copy whatever exists in $1 but not in $2, keeping everything already in $2.
+# (`cp -a -n src/. dst/` and `tar -k` can't merge directory trees.)
+seed() {
+	local p t
+	(cd "$1" && find . -mindepth 1) | while IFS= read -r p; do
+		p=${p#./}
+		t="$2/$p"
+		[ -e "$t" ] || [ -L "$t" ] || cp -a "$1/$p" "$t"
+	done
+}
+
+start() {
+	local dev
+	dev=$(findfs LABEL="$GTVAR_LABEL" 2>/dev/null) || {
+		einfo "No $GTVAR_LABEL partition found, /var stays in RAM"
+		return 0
+	}
+	if mountpoint -q /var; then
+		einfo "/var is already a mount point"
+		return 0
+	fi
+
+	ebegin "Mounting persistent /var from $dev"
+	mkdir -p /run/gotthard-var
+	if ! mount -o noatime "$dev" /run/gotthard-var; then
+		eend 1 "mount failed, /var stays in RAM"
+		return 0
+	fi
+	seed /var /run/gotthard-var
+	mount --move /run/gotthard-var /var
+	eend $?
+}
+
+stop() {
+	# localmount/mount-ro unmount it on shutdown; just flush.
+	sync
+	return 0
+}

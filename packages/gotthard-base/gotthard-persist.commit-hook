@@ -1,0 +1,28 @@
+#!/bin/sh
+# apk commit hook: make `apk add` / `apk del` persistent in diskless mode.
+# Before the commit the boot media is remounted read-write so apk can write
+# the package cache there; afterwards the world file and config are saved
+# with `lbu commit` and the media goes back to read-only.
+#
+# Does nothing while the initramfs installs packages at boot (OpenRC not yet
+# running), or when lbu has no media configured.
+
+[ -e /run/openrc/softlevel ] || exit 0
+[ -r /etc/lbu/lbu.conf ] || exit 0
+# shellcheck disable=SC1091
+. /etc/lbu/lbu.conf
+[ -n "${LBU_MEDIA:-}" ] || exit 0
+mnt=/media/$LBU_MEDIA
+mountpoint -q "$mnt" || exit 0
+
+case "$1" in
+pre-commit)
+	mount -o remount,rw "$mnt"
+	;;
+post-commit)
+	sync
+	lbu commit -q || echo "gotthard: lbu commit failed, run it manually" >&2
+	mount -o remount,ro "$mnt"
+	;;
+esac
+exit 0

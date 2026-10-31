@@ -1,0 +1,59 @@
+# Packages installed at every boot (diskless). One per line.
+# Alpine packages come from the pinned release branch (ALPINE_BRANCH in
+# image/build.sh); the exact versions of each build are written to
+# packages.lock in the build output.
+
+# Base system
+alpine-base
+busybox-mdev-openrc
+gotthard-base
+kmod
+
+# Familiar userland
+bash
+bash-completion
+uutils-coreutils
+sudo
+shadow
+util-linux
+findutils
+grep
+sed
+gawk
+less
+procps-ng
+nano
+vim
+htop
+tzdata
+
+# Networking
+iproute2
+iputils
+ethtool
+tcpdump
+bind-tools
+curl
+ca-certificates
+chrony
+openssh
+ifupdown-ng
+dhcpcd
+dnsmasq
+nftables
+conntrack-tools
+wireguard-tools
+tailscale
+
+# Containers
+docker
+docker-cli-compose
+
+# Storage and boot tooling
+e2fsprogs
+dosfstools
+u-boot-tools
+
+# Wi-Fi (prepared; hostapd comes later)
+iw
+wireless-regdb

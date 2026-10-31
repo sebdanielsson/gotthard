@@ -1,0 +1,8 @@
+# Gotthard network for QEMU's virt machine with user-mode networking (tests).
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0
+	address 10.0.2.15/24
+	gateway 10.0.2.2

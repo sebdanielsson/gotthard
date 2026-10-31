@@ -1,0 +1,7 @@
+#!/bin/sh
+# Same as post-install: make sure the router services start on boot.
+for svc in gotthard-board gotthard-var gotthard-media; do
+	rc-update -q add "$svc" boot 2>/dev/null
+done
+rc-update -q add gotthard-selftest default 2>/dev/null
+exit 0

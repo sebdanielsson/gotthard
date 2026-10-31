@@ -1,0 +1,9 @@
+#!/usr/sbin/nft -f
+# Gotthard: manage only the "inet gotthard" table so Docker's tables survive.
+# Apply changes with `nft -f /etc/nftables.nft` (not `rc-service nftables
+# reload`, which flushes every table including Docker's).
+
+table inet gotthard
+delete table inet gotthard
+
+include "/etc/nftables.d/*.nft"

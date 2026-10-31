@@ -1,0 +1,18 @@
+CONFIG_TARGET_mediatek=y
+CONFIG_TARGET_mediatek_filogic=y
+CONFIG_TARGET_mediatek_filogic_DEVICE_bananapi_bpi-r4=y
+
+# Kernel options OpenWrt exposes in Config-kernel.in
+CONFIG_KERNEL_DEVTMPFS=y
+CONFIG_KERNEL_PSI=y
+CONFIG_KERNEL_KALLSYMS=y
+CONFIG_KERNEL_CGROUPS=y
+CONFIG_KERNEL_NAMESPACES=y
+CONFIG_KERNEL_SECCOMP=y
+
+# We only need the kernel, DTBs and kmods; skip LuCI and the SDK/ImageBuilder.
+# CONFIG_SDK is not set
+# CONFIG_IB is not set
+# CONFIG_MAKE_TOOLCHAIN is not set
+# CONFIG_COLLECT_KERNEL_DEBUG is not set
+# CONFIG_PACKAGE_luci is not set

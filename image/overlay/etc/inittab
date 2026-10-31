@@ -1,0 +1,14 @@
+# /etc/inittab (Gotthard)
+
+::sysinit:/sbin/openrc sysinit
+::sysinit:/sbin/openrc boot
+::wait:/sbin/openrc default
+
+# Consoles: VGA, BPI-R4 serial, QEMU virt serial. gotthard-getty sleeps on
+# ports that don't exist on this board.
+::respawn:/usr/sbin/gotthard-getty tty1
+::respawn:/usr/sbin/gotthard-getty ttyS0
+::respawn:/usr/sbin/gotthard-getty ttyAMA0
+
+::ctrlaltdel:/sbin/reboot
+::shutdown:/sbin/openrc shutdown

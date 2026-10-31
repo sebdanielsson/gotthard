@@ -1,0 +1,20 @@
+# Kernel symbols appended to target/linux/mediatek/filogic/config-6.12 before
+# building. They are what Alpine's userland expects but OpenWrt leaves out.
+
+# devtmpfs: required by udev/mdevd, simplifies Alpine's initramfs
+CONFIG_DEVTMPFS=y
+
+# Compressed initramfs (OpenWrt only accepts uncompressed ones)
+CONFIG_RD_GZIP=y
+CONFIG_RD_ZSTD=y
+
+# zstd-compressed modloop/squashfs images
+CONFIG_SQUASHFS_ZSTD=y
+
+# Automounts and pressure stall information
+CONFIG_AUTOFS_FS=y
+CONFIG_PSI=y
+
+# /proc/config.gz for debugging
+CONFIG_IKCONFIG=y
+CONFIG_IKCONFIG_PROC=y

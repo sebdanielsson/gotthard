@@ -1,0 +1,7 @@
+
+  Gotthard router OS (proof of concept), built on Alpine Linux.
+
+  The OS runs from RAM. Config in /etc is saved to the boot media with
+  `sudo lbu commit`; `apk add` saves itself. /var is on disk.
+  Firewall: `sudo nft -f /etc/nftables.nft` after editing /etc/nftables.d/.
+

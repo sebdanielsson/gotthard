@@ -1,0 +1,3 @@
+# Firewall zones for QEMU tests: the user-mode NIC plays WAN.
+define WAN_IFS = { "eth0" }
+define LAN_IFS = { "br-lan" }

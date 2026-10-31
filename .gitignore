@@ -1,0 +1,23 @@
+# Build output
+/out/
+/.cache/
+
+# Site-specific config and secrets (see docs/site-config.md)
+/site/
+*.rsa
+*.rsa.priv
+*.key
+credentials.txt
+
+# Rust
+/web/target/
+
+# Node / SvelteKit
+node_modules/
+/ui/.svelte-kit/
+/ui/build/
+
+# Editors and OS
+.DS_Store
+.vscode/
+*.swp

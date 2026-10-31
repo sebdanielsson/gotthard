@@ -1,0 +1,3 @@
+# Firewall zones for the Banana Pi BPI-R4
+define WAN_IFS = { "br-wan" }
+define LAN_IFS = { "br-lan" }

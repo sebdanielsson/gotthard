@@ -1,0 +1,48 @@
+# Kernel module packages added on top of the BPI-R4 device defaults.
+# Names are OpenWrt package names. Used both when building the kernel in CI
+# (selected as =m) and when taking modules from the official OpenWrt kmods feed.
+
+# Introspection: /proc/config.gz
+kmod-ikconfig
+
+# Docker: veth pairs, bridge netfilter, iptables-nft compatibility for dockerd
+kmod-veth
+kmod-br-netfilter
+kmod-macvlan
+kmod-ipvlan
+kmod-dummy
+kmod-nft-compat
+kmod-ipt-core
+kmod-ipt-conntrack
+kmod-ipt-extra
+kmod-ipt-nat
+kmod-ipt-nat6
+kmod-ipt-physdev
+
+# nftables router firewall incl. flowtable offload
+kmod-nft-core
+kmod-nft-nat
+kmod-nft-offload
+kmod-nft-fib
+kmod-nft-socket
+kmod-nft-tproxy
+
+# VPN
+kmod-wireguard
+kmod-tun
+
+# systemd-style automounts (built in on the CI kernel)
+kmod-fs-autofs4
+
+# Traffic shaping (later)
+kmod-sched-cake
+kmod-ifb
+
+# USB storage for backups/data
+kmod-usb-storage
+kmod-usb-storage-uas
+kmod-fs-vfat
+kmod-fs-exfat
+kmod-nls-cp437
+kmod-nls-iso8859-1
+kmod-nls-utf8

@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# Install board defaults (interfaces, firewall zones) before networking starts.
+
+description="Detect the board and install its default network config"
+
+depend() {
+	after modloop
+	before modules hwdrivers networking nftables firewall net
+}
+
+start() {
+	ebegin "Detecting board"
+	/usr/sbin/gotthard-board apply
+	eend $?
+}

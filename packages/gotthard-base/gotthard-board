@@ -1,0 +1,61 @@
+#!/bin/sh
+# Detect the board and install its default network and firewall-zone config.
+# Existing files are never overwritten, so site config (from the apkovl or
+# made in the GUI) always wins.
+#
+#   gotthard-board          print the detected board id
+#   gotthard-board apply    install defaults for files that don't exist yet
+set -eu
+
+SHARE=/usr/share/gotthard/boards
+
+detect() {
+	local compat=""
+	if [ -r /proc/device-tree/compatible ]; then
+		compat=$(tr '\0' ' ' </proc/device-tree/compatible)
+	fi
+	case "$compat" in
+	*bananapi,bpi-r4*) echo bananapi-bpi-r4; return ;;
+	*linux,dummy-virt*) echo qemu-virt; return ;;
+	esac
+	case "$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null)" in
+	QEMU*) echo qemu-virt; return ;;
+	esac
+	echo unknown
+}
+
+install_default() { # <file name in boards/> <target>
+	local src
+	[ -e "$2" ] && return 0
+	# Site-provided board defaults (from the apkovl) win over the packaged ones.
+	for src in "/etc/gotthard/boards/$1" "$SHARE/$1"; do
+		[ -f "$src" ] || continue
+		mkdir -p "$(dirname "$2")"
+		cp "$src" "$2"
+		echo "gotthard-board: installed $2 from $src"
+		return 0
+	done
+}
+
+board=$(detect)
+case "${1:-}" in
+apply)
+	echo "$board" >/run/gotthard-board
+	# Kernel builds that ship a module load list in the modloop (the OpenWrt
+	# BPI-R4 kernel loads most drivers from a list, not by modalias).
+	list="/lib/modules/$(uname -r)/gotthard-modules-load.conf"
+	if [ -f "$list" ]; then
+		mkdir -p /run/modules-load.d
+		cp "$list" /run/modules-load.d/gotthard-kernel.conf
+	fi
+	install_default "$board.interfaces" /etc/network/interfaces
+	install_default "$board.zones.nft" /etc/nftables.d/00-zones.nft
+	# Boards with a static WAN (QEMU) need a resolver; others get it from dhcpcd.
+	if [ -f "$SHARE/$board.resolv.conf" ] && ! grep -q '^nameserver' /etc/resolv.conf 2>/dev/null; then
+		cp "$SHARE/$board.resolv.conf" /etc/resolv.conf
+	fi
+	;;
+*)
+	echo "$board"
+	;;
+esac

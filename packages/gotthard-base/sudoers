@@ -1,0 +1,2 @@
+# Gotthard: members of wheel administer the router with sudo.
+%wheel ALL=(ALL:ALL) ALL

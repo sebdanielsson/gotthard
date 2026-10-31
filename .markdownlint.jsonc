@@ -1,0 +1,4 @@
+{
+  // One line per paragraph: let editors soft-wrap.
+  "MD013": false
+}

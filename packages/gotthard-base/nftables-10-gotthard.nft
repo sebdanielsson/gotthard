@@ -1,0 +1,78 @@
+# Gotthard default firewall, loaded by /etc/nftables.nft.
+#
+# Zones come from /etc/nftables.d/00-zones.nft (WAN_IFS, LAN_IFS), installed
+# per board by gotthard-board. Site rules go into the *_site chains from other
+# files in /etc/nftables.d/ (see docs/site-config.md).
+#
+# Only this table is managed by Gotthard; Docker keeps its own tables
+# (firewall-backend nftables), so never `flush ruleset`.
+
+table inet gotthard {
+	chain input {
+		type filter hook input priority filter; policy drop;
+
+		iif "lo" accept
+		ct state vmap { established : accept, related : accept, invalid : drop }
+
+		# LAN, VPN and container networks may reach the router itself.
+		iifname != $WAN_IFS accept
+
+		# From the internet: only what a router needs.
+		icmp type { echo-request, destination-unreachable, time-exceeded } limit rate 100/second accept
+		icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem,
+			echo-request, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } accept
+		ip6 saddr fe80::/10 icmpv6 type { mld-listener-query, mld-listener-report,
+			mld-listener-done, mld2-listener-report } accept
+		ip6 saddr fe80::/10 udp sport 547 udp dport 546 accept comment "DHCPv6 client"
+		udp sport 67 udp dport 68 accept comment "DHCPv4 client"
+		ip protocol igmp accept
+
+		jump input_site
+	}
+
+	chain input_site {
+		# Site rules: ports on the router opened to the internet.
+	}
+
+	chain forward {
+		type filter hook forward priority filter; policy drop;
+
+		ct state vmap { established : accept, related : accept, invalid : drop }
+		ct status dnat accept comment "port forwards and published container ports"
+
+		iifname != $WAN_IFS accept comment "LAN, VPN and containers to anywhere"
+
+		icmpv6 type { destination-unreachable, packet-too-big, time-exceeded,
+			parameter-problem, echo-request } limit rate 1000/second accept
+
+		jump forward_site
+	}
+
+	chain forward_site {
+		# Site rules: extra forwarding from the internet.
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+	}
+
+	chain mangle_forward {
+		type filter hook forward priority mangle; policy accept;
+		oifname $WAN_IFS tcp flags syn / syn,rst tcp option maxseg size set rt mtu comment "MSS clamping"
+		iifname $WAN_IFS tcp flags syn / syn,rst tcp option maxseg size set rt mtu comment "MSS clamping"
+	}
+
+	chain dstnat {
+		type nat hook prerouting priority dstnat; policy accept;
+		jump dstnat_site
+	}
+
+	chain dstnat_site {
+		# Site rules: port forwards (DNAT).
+	}
+
+	chain srcnat {
+		type nat hook postrouting priority srcnat; policy accept;
+		oifname $WAN_IFS meta nfproto ipv4 masquerade
+	}
+}

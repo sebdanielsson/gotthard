@@ -1,0 +1,21 @@
+# Gotthard default network for the Banana Pi BPI-R4 (2x SFP+ variant).
+# Same layout as OpenWrt: 3 RJ45 + SFP+ LAN bridged, RJ45 WAN + SFP+ WAN bridged.
+# Addresses on br-wan come from dhcpcd (see /etc/dhcpcd.conf).
+
+auto lo
+iface lo inet loopback
+
+# Conduit between the SoC and the built-in switch (DSA)
+auto eth0
+iface eth0
+
+auto br-lan
+iface br-lan
+	use bridge
+	bridge-ports lan1 lan2 lan3 sfp-lan
+	address 192.168.1.1/24
+
+auto br-wan
+iface br-wan
+	use bridge
+	bridge-ports wan sfp-wan

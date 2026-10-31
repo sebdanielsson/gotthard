@@ -1,0 +1,9 @@
+#!/bin/sh
+# getty for a serial console that may not exist on this board (inittab lists
+# ttyS0 for the BPI-R4 and ttyAMA0 for QEMU). Without the device, sleep
+# instead of letting init respawn getty in a tight loop.
+tty=$1
+if [ ! -c "/dev/$tty" ] || ! stty -F "/dev/$tty" >/dev/null 2>&1; then
+	exec sleep 2147483647
+fi
+exec /sbin/getty -L 0 "$tty" vt100
